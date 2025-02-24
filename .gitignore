@@ -1,0 +1,37 @@
+
+---
+
+### .gitignore
+
+```gitignore
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+env/
+venv/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Coverage reports
+.coverage
+*.cover
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Editor/IDE settings
+.vscode/
+
+# JSON export files (datasets) – these will not be tracked in the repository
+klexikon_dataset.json
+miniklexikon_dataset.json
+
+# Other common ignores
+*.log
