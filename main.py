@@ -3,12 +3,13 @@ import argparse
 from crawler_klexikon import crawl_klexikon
 from crawler_miniklexikon import crawl_miniklexikon
 from crawler_projekt_gutenberg import crawl_projekt_gutenberg
+from crawler_wikijunior import crawl_wikijunior
 
 def main():
     parser = argparse.ArgumentParser(description="Run a crawler for Klexikon or MiniKlexikon.")
     parser.add_argument(
         "--crawler",
-        choices=["klexikon", "miniklexikon", "projektgutenberg"],
+        choices=["klexikon", "miniklexikon", "projektgutenberg", "wikijunior"],
         required=True,
         help="Which crawler to run (klexikon or miniklexikon)."
     )
@@ -37,10 +38,13 @@ def main():
     elif args.crawler == "miniklexikon":  # args.crawler == "miniklexikon"
         df = crawl_miniklexikon(max_pages=args.max_pages, max_workers=args.max_workers)
         out_file = args.output or "miniklexikon_dataset.json"
-    else: #args.crawler == "projektgutenberg"
+    elif args.crawler == "projektgutenberg": # args.crawler == "projektgutenberg"
         df = crawl_projekt_gutenberg()
         out_file = args.output or "projekt_gutenberg_dataset.json"
-    
+    else: # args.crawler == "wikijunior"
+        df = crawl_wikijunior()
+        out_file = args.output or "wikijunior_dataset.json"
+
     # Export to JSON
     df.to_json(out_file, orient="records", force_ascii=False)
     print(f"{args.crawler.capitalize()} dataset saved to {out_file}")
