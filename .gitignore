@@ -30,8 +30,9 @@ dist/
 .vscode/
 
 # JSON export files (datasets) – these will not be tracked in the repository
-klexikon_dataset.json
-miniklexikon_dataset.json
+*.json
 
 # Other common ignores
 *.log
+
+*.ipynb

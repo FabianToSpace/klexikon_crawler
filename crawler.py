@@ -3,14 +3,24 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
-def get_soup(url):
+def get_soup(url, session=None):
     """
     Fetch and parse a URL, returning a BeautifulSoup object.
-    Raises an exception on request errors.
+    If a requests.Session is provided, use it; otherwise, fallback to requests.get.
+    If any error occurs, log the error and return None.
     """
-    response = requests.get(url)
-    response.raise_for_status()
-    return BeautifulSoup(response.text, "html.parser")
+    try:
+        if session:
+            response = session.get(url)
+        else:
+            response = requests.get(url)
+        response.raise_for_status()
+        if "projekt-gutenberg.org" in url:
+            response.encoding = "utf-8"  # Force UTF-8 encoding for Projekt Gutenberg pages.
+        return BeautifulSoup(response.text, "html.parser")
+    except Exception as e:
+        print(f"Error fetching URL {url}: {e}")
+        return None
 
 def remove_divs_by_class(soup, class_name):
     """
@@ -26,13 +36,11 @@ def remove_after_div_class(soup, class_name):
     """
     target_div = soup.find("div", class_=class_name)
     if target_div:
-        # Remove siblings after target_div
         sibling = target_div.next_sibling
         while sibling:
             next_sibling = sibling.next_sibling
             sibling.decompose()
             sibling = next_sibling
-        # Finally remove target_div itself
         target_div.decompose()
 
 def remove_after_hr(soup):
@@ -49,21 +57,33 @@ def remove_after_hr(soup):
             sibling = next_sibling
         hr_tag.decompose()
 
-def extract_paragraphs(soup):
+def extract_content(soup, stop_marker="mw-inputbox-centered"):
     """
-    From the main content area (div.mw-parser-output), return a list of paragraph texts.
+    From the main content area (div.mw-parser-output), extract text from paragraphs and headings (h1-h6)
+    in the order they appear, stopping when a tag with class stop_marker is encountered.
+    Returns a list of text strings.
     """
-    paragraphs = []
-    content_div = soup.find("div", class_="mw-parser-output")
-    if not content_div:
-        return paragraphs
-    
-    for p in content_div.find_all("p"):
-        p_text = p.get_text(" ", strip=True)
-        if p_text:
-            paragraphs.append(p_text)
-    
-    return paragraphs
+    content = []
+    parser_div = None
+    for div in soup.find_all("div", class_="mw-parser-output"):
+        if div.find_parent("div", id="mw-content-text"):
+            parser_div = div
+            break
+    if not parser_div:
+        parser_div = soup.find("div", class_="mw-parser-output")
+    if not parser_div:
+        return content
+
+    for element in parser_div.contents:
+        if hasattr(element, "name"):
+            if element.name == "div" and stop_marker in element.get("class", []):
+                break
+            if element.name in ["p", "h1", "h2", "h3", "h4", "h5", "h6"]:
+                text = element.get_text(" ", strip=True)
+                if text:
+                    content.append(text)
+    return content
+
 
 def split_into_sentences(paragraph):
     """
@@ -71,5 +91,4 @@ def split_into_sentences(paragraph):
     Returns a list of sentence strings.
     """
     sentences = re.split(r'[.?!]+(?:\s+|$)', paragraph)
-    # Remove empty strings and strip whitespace
     return [s.strip() for s in sentences if s.strip()]
